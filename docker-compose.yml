@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: ghost
+      MYSQL_USER: ghost
+      MYSQL_PASSWORD: ghostpass
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  ghost:
+    image: ghost:5
+    container_name: ghost
+    restart: always
+    depends_on:
+      - mariadb
+    environment:
+      url: http://YOUR_SERVER_IP:8080
+      database__client: mysql
+      database__connection__host: mariadb
+      database__connection__user: ghost
+      database__connection__password: ghostpass
+      database__connection__database: ghost
+    ports:
+      - "8080:2368"
+    volumes:
+      - ghost_data:/var/lib/ghost/content
+
+  api:
+    image: node:18
+    container_name: node-api
+    working_dir: /usr/src/app
+    volumes:
+      - ./api:/usr/src/app
+    command: ["sh", "-c", "npm install && node server.js"]
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mariadb
+    restart: always
+
+volumes:
+  mariadb_data:
+  ghost_data:
+
